@@ -7,6 +7,9 @@ Cargo.lock.orig
 **/*.bin
 methods/guest/target/
 
+# Generated prover artifacts (proof.json + per-user inclusion proofs)
+out/
+
 # Secrets / keys — never commit
 .env
 .env.*

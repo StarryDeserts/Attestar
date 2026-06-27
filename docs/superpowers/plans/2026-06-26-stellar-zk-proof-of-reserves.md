@@ -937,7 +937,7 @@ git commit -m "feat(guest): real Merkle-sum PoR guest + executor journal round-t
   { "id": 1007, "balance": 12750000 }
 ]
 ```
-(Balances in stroops; total = 4 471 750 000 stroops = 447.175 USDC.)
+(Balances in stroops; total = 4 466 750 000 stroops = 446.675 USDC.)
 
 - [ ] **Step 2: Host `Cargo.toml` deps**
 
@@ -1042,7 +1042,7 @@ fn main() -> Result<()> {
 - [ ] **Step 4: Smoke-run in dev mode** (fast; verifies dataset load + artifact writing)
 
 Run: `RISC0_DEV_MODE=1 cargo run -p host --release`
-Expected: prints `wrote out/proof.json (total=4471750000 stroops, count=7)`; `out/inclusion/` has 7 files. (Dev-mode `seal` is a stub; real seal comes next.)
+Expected: prints `wrote out/proof.json (total=4466750000 stroops, count=7)`; `out/inclusion/` has 7 files. (Dev-mode `seal` is a stub; real seal comes next.)
 
 - [ ] **Step 5: Real Groth16 run**
 
