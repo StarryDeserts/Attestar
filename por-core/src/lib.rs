@@ -104,6 +104,56 @@ impl MerkleSumTree {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Sibling {
+    pub hash: [u8; 32],
+    pub sum: u64,
+    pub is_left: bool, // true if the sibling sits on the LEFT of the current node
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct InclusionProof {
+    pub id: u64,
+    pub balance: u64,
+    pub index: usize,
+    pub siblings: Vec<Sibling>,
+}
+
+impl MerkleSumTree {
+    pub fn inclusion_proof(&self, index: usize) -> Result<InclusionProof, PorError> {
+        if index >= self.accounts.len() {
+            return Err(PorError::IndexOutOfRange);
+        }
+        let mut siblings = Vec::new();
+        let mut idx = index;
+        for level in &self.levels[..self.levels.len() - 1] {
+            let sib_idx = idx ^ 1;
+            let sib = &level[sib_idx];
+            siblings.push(Sibling { hash: sib.hash, sum: sib.sum, is_left: sib_idx < idx });
+            idx /= 2;
+        }
+        let acct = self.accounts[index];
+        Ok(InclusionProof { id: acct.id, balance: acct.balance, index, siblings })
+    }
+}
+
+pub fn verify_inclusion(proof: &InclusionProof, expected_root: &[u8; 32]) -> bool {
+    let mut hash = hash_leaf(proof.id, proof.balance);
+    let mut sum = proof.balance;
+    for s in &proof.siblings {
+        if s.is_left {
+            hash = hash_node(&s.hash, s.sum, &hash, sum);
+        } else {
+            hash = hash_node(&hash, sum, &s.hash, s.sum);
+        }
+        sum = match sum.checked_add(s.sum) {
+            Some(v) => v,
+            None => return false,
+        };
+    }
+    &hash == expected_root
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -150,5 +200,48 @@ mod tests {
     fn single_account_root_is_leaf_chained_to_self_pow2() {
         let t = MerkleSumTree::build(&[Account { id: 9, balance: 42 }]).unwrap();
         assert_eq!(t.total(), 42);
+    }
+
+    #[test]
+    fn inclusion_roundtrip_valid() {
+        let accounts = vec![
+            Account { id: 10, balance: 100 },
+            Account { id: 20, balance: 250 },
+            Account { id: 30, balance: 5 },
+            Account { id: 40, balance: 0 },
+            Account { id: 50, balance: 700 },
+        ];
+        let t = MerkleSumTree::build(&accounts).unwrap();
+        let root = t.root();
+        for i in 0..accounts.len() {
+            let p = t.inclusion_proof(i).unwrap();
+            assert_eq!(p.id, accounts[i].id);
+            assert_eq!(p.balance, accounts[i].balance);
+            assert!(verify_inclusion(&p, &root), "proof {i} should verify");
+        }
+    }
+
+    #[test]
+    fn inclusion_rejects_tampered_balance() {
+        let accounts = vec![Account { id: 1, balance: 100 }, Account { id: 2, balance: 200 }];
+        let t = MerkleSumTree::build(&accounts).unwrap();
+        let root = t.root();
+        let mut p = t.inclusion_proof(0).unwrap();
+        p.balance += 1; // lie
+        assert!(!verify_inclusion(&p, &root));
+    }
+
+    #[test]
+    fn inclusion_rejects_wrong_root() {
+        let accounts = vec![Account { id: 1, balance: 100 }, Account { id: 2, balance: 200 }];
+        let t = MerkleSumTree::build(&accounts).unwrap();
+        let p = t.inclusion_proof(1).unwrap();
+        assert!(!verify_inclusion(&p, &[0u8; 32]));
+    }
+
+    #[test]
+    fn inclusion_index_out_of_range() {
+        let t = MerkleSumTree::build(&[Account { id: 1, balance: 1 }]).unwrap();
+        assert_eq!(t.inclusion_proof(5).unwrap_err(), PorError::IndexOutOfRange);
     }
 }
