@@ -1,0 +1,29 @@
+# Rust / Soroban
+target/
+**/target/
+Cargo.lock.orig
+
+# RISC Zero
+**/*.bin
+methods/guest/target/
+
+# Secrets / keys — never commit
+.env
+.env.*
+*.key
+*.pem
+secret*.txt
+*-secret.json
+identity.toml
+
+# Node / frontend
+node_modules/
+dist/
+.next/
+*.local
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
