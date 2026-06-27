@@ -154,6 +154,37 @@ pub fn verify_inclusion(proof: &InclusionProof, expected_root: &[u8; 32]) -> boo
     &hash == expected_root
 }
 
+pub const JOURNAL_LEN: usize = 32 + 8 + 8 + 4; // 52
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Journal {
+    pub root: [u8; 32],
+    pub total: u64,
+    pub snapshot: u64,
+    pub count: u32,
+}
+
+pub fn encode_journal(j: &Journal) -> [u8; JOURNAL_LEN] {
+    let mut out = [0u8; JOURNAL_LEN];
+    out[0..32].copy_from_slice(&j.root);
+    out[32..40].copy_from_slice(&j.total.to_le_bytes());
+    out[40..48].copy_from_slice(&j.snapshot.to_le_bytes());
+    out[48..52].copy_from_slice(&j.count.to_le_bytes());
+    out
+}
+
+pub fn decode_journal(bytes: &[u8]) -> Result<Journal, PorError> {
+    if bytes.len() != JOURNAL_LEN {
+        return Err(PorError::BadJournal);
+    }
+    let mut root = [0u8; 32];
+    root.copy_from_slice(&bytes[0..32]);
+    let total = u64::from_le_bytes(bytes[32..40].try_into().unwrap());
+    let snapshot = u64::from_le_bytes(bytes[40..48].try_into().unwrap());
+    let count = u32::from_le_bytes(bytes[48..52].try_into().unwrap());
+    Ok(Journal { root, total, snapshot, count })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -243,5 +274,28 @@ mod tests {
     fn inclusion_index_out_of_range() {
         let t = MerkleSumTree::build(&[Account { id: 1, balance: 1 }]).unwrap();
         assert_eq!(t.inclusion_proof(5).unwrap_err(), PorError::IndexOutOfRange);
+    }
+
+    #[test]
+    fn journal_encode_layout_is_exact() {
+        let j = Journal { root: [0xAB; 32], total: 0x1122334455667788, snapshot: 0x00000000DEADBEEF, count: 0x01020304 };
+        let b = encode_journal(&j);
+        assert_eq!(b.len(), 52);
+        assert_eq!(&b[0..32], &[0xAB; 32]);
+        assert_eq!(&b[32..40], &0x1122334455667788u64.to_le_bytes());
+        assert_eq!(&b[40..48], &0x00000000DEADBEEFu64.to_le_bytes());
+        assert_eq!(&b[48..52], &0x01020304u32.to_le_bytes());
+    }
+
+    #[test]
+    fn journal_roundtrip() {
+        let j = Journal { root: [7; 32], total: 999_999, snapshot: 1_700_000_000, count: 12345 };
+        let decoded = decode_journal(&encode_journal(&j)).unwrap();
+        assert_eq!(decoded, j);
+    }
+
+    #[test]
+    fn journal_decode_rejects_wrong_length() {
+        assert_eq!(decode_journal(&[0u8; 51]).unwrap_err(), PorError::BadJournal);
     }
 }
