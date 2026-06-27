@@ -244,10 +244,10 @@ mod tests {
         ];
         let t = MerkleSumTree::build(&accounts).unwrap();
         let root = t.root();
-        for i in 0..accounts.len() {
+        for (i, account) in accounts.iter().enumerate() {
             let p = t.inclusion_proof(i).unwrap();
-            assert_eq!(p.id, accounts[i].id);
-            assert_eq!(p.balance, accounts[i].balance);
+            assert_eq!(p.id, account.id);
+            assert_eq!(p.balance, account.balance);
             assert!(verify_inclusion(&p, &root), "proof {i} should verify");
         }
     }
