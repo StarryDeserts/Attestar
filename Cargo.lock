@@ -2266,6 +2266,7 @@ dependencies = [
  "anyhow",
  "hex",
  "methods",
+ "por-core",
  "risc0-ethereum-contracts",
  "risc0-zkvm",
  "sha2",
