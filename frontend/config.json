@@ -1,0 +1,9 @@
+{
+  "network": "testnet",
+  "rpcUrl": "https://soroban-testnet.stellar.org",
+  "networkPassphrase": "Test SDF Network ; September 2015",
+  "snapshot": 1700000000,
+  "attestation_contract": "CBMZGJJYJCBNEG3HHPEE42XPP6TNINKWK2SM7XM3H7DNXNAPZXI2ZTBK",
+  "source_account": "GBSVP5BFFUXPCVHMN4MGZ256NHIDVVDUW43PAN5S6XXQROJIXKC3KX3F",
+  "explorer_base": "https://stellar.expert/explorer/testnet"
+}
