@@ -10,8 +10,14 @@ Cargo.lock.orig
 **/*.bin
 methods/guest/target/
 
-# Generated prover artifacts (proof.json + per-user inclusion proofs)
-out/
+# Generated prover artifacts — working dir ignored, but the canonical demo proof
+# (the one matching the live on-chain attestation) is tracked so verifier-cli and
+# scripts/demo.sh work without re-running the ~16GB Groth16 prove.
+out/*
+!out/proof.json
+!out/inclusion/
+out/inclusion/*
+!out/inclusion/*.json
 
 # Secrets / keys — never commit
 .env
