@@ -117,17 +117,19 @@ RISC0_DEV_MODE=1 cargo run -p host -- --balances data/mock-balances.json --snaps
 ```
 Writes `out/proof.json` (seal, image id, root, total, snapshot, count) and `out/inclusion/<id>.json` for every account. The bundled dataset is **7 users totaling 4,466,750,000 stroops (446.675 USDC)**.
 
-### Deploy + submit on testnet
+### Submit on testnet (against the live deployment)
+Everything is already deployed to Stellar **testnet** — contract IDs live in [`deployment.json`](deployment.json). `scripts/demo.sh` reads that manifest plus `out/proof.json`, submits the proof to the live attestation contract (which verifies the receipt, reads live USDC reserves, and enforces `R ≥ L`), and prints the stored attestation:
 ```bash
-# Build the contract wasm
-cargo build -p attestation --target wasm32v1-none --release
-# Deploy the NethermindEth verifier router + this contract, then submit the proof:
-./scripts/demo.sh
+./scripts/demo.sh             # submit the proof, then show the attestation  (needs the admin identity)
+./scripts/demo.sh --show-only # just read the current on-chain attestation   (no key needed)
 ```
-<!-- deploy-time values, filled in after Phase 5 deployment -->
-- **Attestation contract:** `CONTRACT_ID` — _to be filled after deployment_
-- **Verifier router:** `VERIFIER_ROUTER_ID` — _to be filled after deployment_
-- **Example testnet transaction:** _explorer link to be filled after deployment_
+To redeploy from scratch into your own accounts, see [`scripts/setup-testnet.sh`](scripts/setup-testnet.sh).
+
+**Live testnet deployment**
+- **Attestation contract:** [`CBMZGJJYJCBNEG3HHPEE42XPP6TNINKWK2SM7XM3H7DNXNAPZXI2ZTBK`](https://stellar.expert/explorer/testnet/contract/CBMZGJJYJCBNEG3HHPEE42XPP6TNINKWK2SM7XM3H7DNXNAPZXI2ZTBK)
+- **Verifier router** (NethermindEth, self-deployed): [`CDIVJXYM53PIG46TDPNOQCXJ7JCAKZB5JLXISS244KXF6LRJCC7PFTFD`](https://stellar.expert/explorer/testnet/contract/CDIVJXYM53PIG46TDPNOQCXJ7JCAKZB5JLXISS244KXF6LRJCC7PFTFD)
+- **USDC SAC** (live reserves are read from here): [`CDIEHHQMSJ2EXUWRFXVRJTKCMKGTPADILISCE6UVNR4XAHIRG3LJ6QLD`](https://stellar.expert/explorer/testnet/contract/CDIEHHQMSJ2EXUWRFXVRJTKCMKGTPADILISCE6UVNR4XAHIRG3LJ6QLD)
+- **Example `submit_proof` transaction:** [`719445c8…f51a0`](https://stellar.expert/explorer/testnet/tx/719445c8a625ec64e99a67af5b6011c89816f900aa5bb3d2eb0c54cafe7f51a0) — verifies the receipt, reads live USDC reserves, stores `solvent: true`.
 
 ### Verify your inclusion (as a user)
 ```bash
