@@ -15,6 +15,20 @@ pub enum PorError {
     BadJournal,
 }
 
+impl core::fmt::Display for PorError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let msg = match self {
+            PorError::Empty => "account set is empty",
+            PorError::Overflow => "balance sum overflow",
+            PorError::IndexOutOfRange => "index out of range",
+            PorError::BadJournal => "malformed journal bytes",
+        };
+        f.write_str(msg)
+    }
+}
+
+impl std::error::Error for PorError {}
+
 const TAG_LEAF: u8 = 0x00;
 const TAG_NODE: u8 = 0x01;
 const TAG_PADDING: u8 = 0x02;
