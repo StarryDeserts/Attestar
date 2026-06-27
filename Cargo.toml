@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["por-core", "methods", "host"]
+members = ["por-core", "methods", "host", "verifier-cli"]
 
 [workspace.package]
 version = "0.1.0"
