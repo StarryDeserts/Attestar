@@ -1,10 +1,16 @@
-# ZK Proof-of-Reserves on Stellar
+# Attestar — ZK Proof-of-Reserves on Stellar
 
 > Prove an exchange's USDC reserves cover **every** user's balance — verified on-chain by a Soroban contract — **without revealing any individual balance.**
 
-Built for **Stellar Hacks: Real-World ZK**.
+**Attestar** — built for **Stellar Hacks: Real-World ZK**.
 
 A custodian commits to its per-user liabilities under a Merkle-sum-tree root `M`, generates a RISC Zero zkVM proof that `total = Σ balanceᵢ` (with every `0 ≤ balanceᵢ < 2⁶⁴`), wraps it as a Groth16 receipt, and submits it to a Soroban contract. The contract verifies the receipt **and reads the issuer's live on-chain USDC balance**, storing an attestation only if `reserves ≥ liabilities`. Any user can then independently check that their balance was included in `M`.
+
+## Try it
+
+- **🟢 Live dashboard — <https://starrydeserts.github.io/Attestar/>** — reads the attestation live from the Soroban contract and verifies a Merkle inclusion proof entirely in your browser. No install required.
+- **▶ Demo video:** _add your YouTube / Loom link here_ — a narrated ~80-second walkthrough.
+- **🔗 On-chain:** attestation contract [`CBMZ…ZTBK`](https://stellar.expert/explorer/testnet/contract/CBMZGJJYJCBNEG3HHPEE42XPP6TNINKWK2SM7XM3H7DNXNAPZXI2ZTBK) · example `submit_proof` [tx `719445c8…`](https://stellar.expert/explorer/testnet/tx/719445c8a625ec64e99a67af5b6011c89816f900aa5bb3d2eb0c54cafe7f51a0)
 
 ---
 
@@ -78,7 +84,7 @@ The contract verifies `sha256(journal)` against the receipt, so any disagreement
                   └───────────┬──────────────────────────────────────────┘
                               │ get_attestation(snapshot)
                   ┌───────────▼─────────────┐
-                  │  frontend dashboard      │  live attestation + in-browser
+                  │  Attestar dashboard      │  live attestation + in-browser
                   │  (visuals: open-design)  │  inclusion verification
                   └──────────────────────────┘
 ```
@@ -91,7 +97,7 @@ The contract verifies `sha256(journal)` against the receipt, so any disagreement
 | `host` | Prover CLI: runs the guest, produces a Groth16 receipt, writes `out/proof.json` + per-user inclusion proofs. |
 | `contracts/attestation` | Soroban contract: verifies the receipt, reads live USDC reserves, enforces solvency, stores attestations. |
 | `verifier-cli` | Pure-Rust off-chain tool for a user to verify their inclusion proof against the published root. |
-| `frontend` | Demo dashboard (functional; visual polish deferred to `open-design`). |
+| `frontend` | **Attestar** dashboard — live attestation + in-browser inclusion verification (visual system from `open-design`). |
 
 ## 5. How to run
 
@@ -155,11 +161,24 @@ cargo run -p verifier-cli -- \
 - **Mock ledger.** The balance set is a fixture, not a feed from a real exchange database.
 - **Unaudited verifier.** The NethermindEth `stellar-risc0-verifier` is self-deployed and unaudited; this is a hackathon integration, not a production trust anchor.
 
-## 8. Demo
+## 8. Demo & verify it yourself
 
-See [`docs/demo-script.md`](docs/demo-script.md) for the 2–3 minute walkthrough.
-<!-- video URL to be filled after recording -->
-Video: _to be filled after recording._
+**▶ Demo video:** _add your YouTube / Loom link here_ — a narrated ~80-second walkthrough (live attestation → **INCLUDED** → one-digit tamper → **NOT INCLUDED**). Shot list: [`docs/demo-script.md`](docs/demo-script.md).
+
+**Anyone can verify the live attestation in a browser — no install:**
+
+1. Open the **[live dashboard](https://starrydeserts.github.io/Attestar/)**. It reads the attestation straight from the Soroban contract on testnet, so you should see **✅ FULLY RESERVED** — 500 USDC of live reserves against 446.675 USDC of proven liabilities (111.94% coverage), plus the Merkle-sum root.
+2. Click **Load sample (1001)**, then **Verify against on-chain root** → **✅ INCLUDED — id 1001**. The proof is folded with por-core's exact hashing in your browser and compared against the live root.
+3. Change one digit of the balance and verify again → **❌ NOT INCLUDED** — the recomputed root no longer matches.
+
+**Prefer to run it locally?**
+
+```bash
+python3 -m http.server 8765      # from the repo root
+# then open http://localhost:8765/frontend/index.html
+```
+
+The dashboard is a static page (`frontend/`): it reads the chain through the public testnet RPC and verifies proofs with the same logic as [`verifier-cli`](verifier-cli), shared via [`frontend/por-verify.js`](frontend/por-verify.js) and guarded by a Node self-test.
 
 ## License
 

@@ -34,6 +34,14 @@ dist/
 .next/
 *.local
 
+# open-design prototypes — design source kept local, not part of the product
+# (the shipped UI lives in frontend/; the brief is in docs/design-brief.md)
+uiux-design/
+
+# Demo video — recorded locally; host it externally (YouTube/Loom) and link it
+# from the README rather than committing the binary.
+*.mp4
+
 # OS / editor
 .DS_Store
 *.swp
