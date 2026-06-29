@@ -58,35 +58,38 @@ The contract verifies `sha256(journal)` against the receipt, so any disagreement
 
 ## 4. Architecture
 
-```
-                        ┌──────────────────────────────────────────┐
-   data/mock-balances   │  por-core  (shared, no_std-friendly)      │
-   (per-user ledger) ─► │  Merkle-sum tree · inclusion proofs ·     │
-                        │  journal encode/decode                    │
-                        └───────────────┬───────────────┬──────────┘
-                                        │               │
-                  ┌─────────────────────▼──┐         ┌──▼───────────────────┐
-                  │  methods/guest (zkVM)   │         │  verifier-cli        │
-                  │  build tree, commit     │         │  off-chain inclusion │
-                  │  journal                │         │  self-check (users)  │
-                  └───────────┬─────────────┘         └──────────────────────┘
-                              │ proven by
-                  ┌───────────▼─────────────┐
-                  │  host (prover CLI)       │  ──►  out/proof.json
-                  │  RISC Zero → Groth16     │       out/inclusion/<id>.json
-                  └───────────┬─────────────┘
-                              │ seal + root + total + snapshot + count
-                  ┌───────────▼──────────────────────────────────────────┐
-                  │  contracts/attestation  (Soroban)                     │
-                  │   1. verify receipt via NethermindEth router          │
-                  │   2. read LIVE USDC SAC balance of reserve account    │
-                  │   3. require reserves ≥ liabilities → store attest    │
-                  └───────────┬──────────────────────────────────────────┘
-                              │ get_attestation(snapshot)
-                  ┌───────────▼─────────────┐
-                  │  Attestar dashboard      │  live attestation + in-browser
-                  │  (visuals: open-design)  │  inclusion verification
-                  └──────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph offchain["Off-chain proving · Rust"]
+        data[("data/mock-balances<br/>per-user ledger (private)")]
+        core["por-core (shared)<br/>Merkle-sum tree · inclusion proofs<br/>52-byte journal codec"]
+        guest["methods/guest · RISC Zero zkVM<br/>build tree · commit journal"]
+        host["host · prover CLI<br/>RISC Zero → Groth16"]
+        artifacts[/"out/proof.json<br/>out/inclusion/&lt;id&gt;.json"/]
+        data --> core
+        core --> guest
+        guest -->|proven by| host
+        host --> artifacts
+    end
+
+    subgraph onchain["On-chain · Stellar / Soroban"]
+        sac[("USDC SAC<br/>live reserves")]
+        contract["contracts/attestation · Soroban<br/>1 · verify receipt via NethermindEth router<br/>2 · read LIVE USDC reserve balance<br/>3 · require reserves ≥ liabilities → store"]
+        sac -->|balance| contract
+    end
+
+    subgraph audit["Self-verification · anyone"]
+        cli["verifier-cli<br/>off-chain inclusion self-check<br/>(uses por-core)"]
+        dash(["Attestar dashboard<br/>live attestation + in-browser inclusion<br/>(por-verify.js mirrors por-core)"])
+    end
+
+    artifacts -->|"seal · root · total · snapshot · count"| contract
+    contract -->|get_attestation| dash
+    artifacts -. inclusion proof .-> cli
+    artifacts -. inclusion proof .-> dash
+
+    classDef key stroke:#7C6CF6,stroke-width:2px;
+    class contract,sac key;
 ```
 
 **Components**
