@@ -9,7 +9,7 @@ A custodian commits to its per-user liabilities under a Merkle-sum-tree root `M`
 ## Try it
 
 - **🟢 Live dashboard — <https://starrydeserts.github.io/Attestar/>** — reads the attestation live from the Soroban contract and verifies a Merkle inclusion proof entirely in your browser. No install required.
-- **▶ Demo video:** _add your YouTube / Loom link here_ — a narrated ~80-second walkthrough.
+- **▶ Demo video:** [watch on YouTube](https://youtu.be/DFXo53pYJDM) — a narrated ~80-second walkthrough.
 - **🔗 On-chain:** attestation contract [`CBMZ…ZTBK`](https://stellar.expert/explorer/testnet/contract/CBMZGJJYJCBNEG3HHPEE42XPP6TNINKWK2SM7XM3H7DNXNAPZXI2ZTBK) · example `submit_proof` [tx `719445c8…`](https://stellar.expert/explorer/testnet/tx/719445c8a625ec64e99a67af5b6011c89816f900aa5bb3d2eb0c54cafe7f51a0)
 
 ---
@@ -163,7 +163,9 @@ cargo run -p verifier-cli -- \
 
 ## 8. Demo & verify it yourself
 
-**▶ Demo video:** _add your YouTube / Loom link here_ — a narrated ~80-second walkthrough (live attestation → **INCLUDED** → one-digit tamper → **NOT INCLUDED**). Shot list: [`docs/demo-script.md`](docs/demo-script.md).
+**▶ Demo video** — a narrated ~80-second walkthrough (live attestation → **INCLUDED** → one-digit tamper → **NOT INCLUDED**). Shot list: [`docs/demo-script.md`](docs/demo-script.md).
+
+[![Attestar — ZK Proof-of-Reserves on Stellar (demo)](https://img.youtube.com/vi/DFXo53pYJDM/hqdefault.jpg)](https://youtu.be/DFXo53pYJDM)
 
 **Anyone can verify the live attestation in a browser — no install:**
 
