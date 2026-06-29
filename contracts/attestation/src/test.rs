@@ -2,7 +2,7 @@
 use soroban_sdk::testutils::Address as _;
 use soroban_sdk::{contract, contractimpl, symbol_short, token, Address, Bytes, BytesN, Env};
 use risc0_interface::VerifierError;
-use crate::{Attestation, Error, ProofOfReserves, ProofOfReservesClient};
+use crate::{Error, ProofOfReserves, ProofOfReservesClient};
 
 // --- Mock router: succeeds unless a "reject" flag is set, then it traps. ---
 #[contract]
@@ -30,10 +30,7 @@ impl MockVerifier {
 struct Fixture {
     env: Env,
     client: ProofOfReservesClient<'static>,
-    reserve: Address,
-    usdc: Address,
     verifier: Address,
-    admin: Address,
 }
 
 fn setup(reserve_amount: i128) -> Fixture {
@@ -58,7 +55,7 @@ fn setup(reserve_amount: i128) -> Fixture {
     );
     let client = ProofOfReservesClient::new(&env, &contract_id);
 
-    Fixture { env, client, reserve, usdc, verifier, admin }
+    Fixture { env, client, verifier }
 }
 
 #[test]

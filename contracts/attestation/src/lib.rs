@@ -107,6 +107,9 @@ impl ProofOfReserves {
             solvent: true,
         };
         env.storage().persistent().set(&DataKey::Attestation(snapshot), &attestation);
+        // publish() is deprecated in this SDK in favor of #[contractevent]; kept
+        // as-is so the source still reproduces the deployed wasm (hash unchanged).
+        #[allow(deprecated)]
         env.events().publish(
             (symbol_short!("attest"), snapshot),
             (root, liabilities, reserves),
