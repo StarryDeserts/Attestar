@@ -4,6 +4,7 @@
   "networkPassphrase": "Test SDF Network ; September 2015",
   "snapshot": 1700000000,
   "attestation_contract": "CBMZGJJYJCBNEG3HHPEE42XPP6TNINKWK2SM7XM3H7DNXNAPZXI2ZTBK",
+  "verifier_contract": "CDIVJXYM53PIG46TDPNOQCXJ7JCAKZB5JLXISS244KXF6LRJCC7PFTFD",
   "source_account": "GBSVP5BFFUXPCVHMN4MGZ256NHIDVVDUW43PAN5S6XXQROJIXKC3KX3F",
   "explorer_base": "https://stellar.expert/explorer/testnet"
 }

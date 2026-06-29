@@ -1,57 +1,140 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ZK Proof-of-Reserves — Solvency Dashboard</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Attestar — ZK Proof-of-Reserves on Stellar</title>
+  <meta name="description" content="Attestar proves an exchange's live USDC reserves cover every user's balance — verified on-chain by a Soroban contract, without revealing any balance." />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <!-- Stellar JS SDK (browser global: StellarSdk) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/stellar-sdk/13.3.0/stellar-sdk.min.js"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- NOTE: functional skeleton — visual design intentionally minimal (to be done via open-design). -->
-  <header class="wrap">
-    <h1>ZK Proof-of-Reserves</h1>
-    <p class="sub">An exchange proves its USDC reserves cover every user's balance — verified on-chain by a Soroban contract, without revealing any individual balance.</p>
-    <p class="meta">Stellar <span id="net">testnet</span> · live attestation · snapshot <span id="snap">—</span></p>
-  </header>
 
-  <main class="wrap">
-    <!-- 1. Solvency status pulled live from the attestation contract -->
-    <section id="solvency" class="card" aria-live="polite">
-      <div class="status" id="statusBadge">Loading live attestation…</div>
-      <dl class="grid">
-        <div><dt>Reserves (live USDC)</dt><dd id="reserves">—</dd></div>
-        <div><dt>Liabilities (proven)</dt><dd id="liabilities">—</dd></div>
-        <div><dt>Coverage</dt><dd id="coverage">—</dd></div>
-        <div><dt>Users counted</dt><dd id="count">—</dd></div>
-        <div class="full"><dt>Merkle-sum root</dt><dd id="root" class="mono">—</dd></div>
-      </dl>
-      <p class="links">
-        <a id="contractLink" target="_blank" rel="noopener">Attestation contract ↗</a>
-      </p>
-      <p id="solvencyError" class="error" hidden></p>
+  <!-- ─── shared SVG symbols (Attestar root star) ─── -->
+  <svg class="svg-defs" aria-hidden="true" focusable="false">
+    <defs>
+      <!-- ROOT STAR: six-ray asterisk whose lower rays converge to one root point
+           (Merkle root) + a discrete check (attested). Colored via --c-* vars. -->
+      <symbol id="rootstar" viewBox="0 0 48 48">
+        <g fill="none" stroke="var(--c-ray, currentColor)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M24 8 V34"/>
+          <path d="M12.75 14.5 L35.25 27.5"/>
+          <path d="M35.25 14.5 L12.75 27.5"/>
+          <path d="M24 34 L24 42"/>
+          <path d="M35.25 27.5 L24 42"/>
+          <path d="M12.75 27.5 L24 42"/>
+        </g>
+        <path d="M31.5 12 L34.5 15 L41 7" fill="none"
+              stroke="var(--c-check, var(--c-ray, currentColor))"
+              stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="24" cy="42" r="2.4" fill="var(--c-root, var(--c-ray, currentColor))"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <div class="container">
+
+    <!-- 1 · HEADER -->
+    <header class="site-head">
+      <div class="brandmark">
+        <span class="glyph" aria-hidden="true">
+          <svg viewBox="0 0 48 48"><use href="#rootstar" style="--c-ray:#fff;--c-check:#fff;--c-root:#fff"/></svg>
+        </span>
+        <span class="name">Attestar <span>· ZK Proof-of-Reserves</span></span>
+      </div>
+      <h1 class="head-title">Reserves that <span class="grad">prove themselves</span>.</h1>
+      <p class="head-vp">An exchange proves its USDC reserves cover every user's balance — verified on-chain by a Soroban contract, without revealing any balance.</p>
+      <div class="meta-strip">
+        <span>Stellar <span id="net">testnet</span></span>
+        <span class="dot-sep">·</span>
+        <span>snapshot <span id="snap" class="num">—</span></span>
+        <span class="dot-sep">·</span>
+        <span class="live"><span class="dot"></span> live</span>
+      </div>
+    </header>
+
+    <!-- 2 · SOLVENCY ATTESTATION (rendered by app.js from the live read) -->
+    <section class="section" id="solvencyMount" aria-live="polite"></section>
+
+    <!-- 3 · INCLUSION VERIFICATION -->
+    <section class="section">
+      <div class="card">
+        <div class="section-head">
+          <span class="kicker">Self-serve audit</span>
+          <h2>Verify your inclusion</h2>
+          <p>Confirm your balance was part of the proven liability total. Load <code class="mono">out/inclusion/1001.json</code>, pick a file, or paste a proof — it's checked against the on-chain root entirely in your browser, with por-core's exact hashing. Your balance never leaves this page.</p>
+        </div>
+
+        <div class="verify-controls">
+          <label class="file-ctl">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4m0 0L8 8m4-4l4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            <span>Choose proof file</span>
+            <input type="file" id="proofFile" accept=".json,application/json" />
+          </label>
+          <span class="file-name" id="fileName">No file selected</span>
+          <button class="btn-ghost-link" id="loadSample" type="button">Load sample (1001)</button>
+        </div>
+
+        <textarea class="proof-area mono" id="proofInput" spellcheck="false" placeholder='Paste an inclusion proof, e.g. out/inclusion/1001.json
+{
+  "id": 1001,
+  "balance": 125000000,
+  "index": 0,
+  "siblings": [
+    { "hash": [ 36, 69, … ], "sum": 47500000, "is_left": false },
+    …
+  ]
+}'></textarea>
+
+        <button class="btn-verify" id="verifyBtn" type="button">
+          <span class="spinner" aria-hidden="true"></span>
+          <svg class="shield-ico" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-4z" stroke="#fff" stroke-width="1.5" opacity=".7"/><path d="M9 12.5l2 2 4-4.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span id="verifyLabel">Verify against on-chain root</span>
+        </button>
+
+        <div class="result" id="result" role="status" aria-live="polite">
+          <div class="r-icon" id="resultIcon"></div>
+          <div class="r-text">
+            <div class="r-head" id="resultHead"></div>
+            <div class="r-sub" id="resultSub"></div>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <!-- 2. Anyone can verify their balance was included in the proven total -->
-    <section id="inclusion" class="card">
-      <h2>Verify your inclusion</h2>
-      <p class="sub">Paste (or load) your inclusion proof — e.g. <code>out/inclusion/1001.json</code>. Verification runs entirely in your browser against the on-chain root. Tamper with one digit and it fails.</p>
-      <div class="controls">
-        <input type="file" id="proofFile" accept="application/json,.json" />
-        <button id="loadSample" type="button">Load sample (1001)</button>
+    <!-- 4 · HOW IT WORKS -->
+    <section class="section">
+      <div class="section-head">
+        <span class="kicker">The ZK pipeline</span>
+        <h2>How it works</h2>
       </div>
-      <textarea id="proofInput" rows="10" spellcheck="false" placeholder='{ "id": 1001, "balance": 125000000, "index": 0, "siblings": [ … ] }'></textarea>
-      <div class="controls">
-        <button id="verifyBtn" type="button">Verify against on-chain root</button>
+      <div class="pipe">
+        <div class="step"><div class="s-ico"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div><div class="s-num">01</div><div class="s-title">User balances (private)</div><div class="s-desc">Each user's balance stays secret — never revealed.</div></div>
+        <div class="step"><div class="s-ico"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v4M6 21v-5M18 21v-5M12 7L6 16M12 7l6 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="4" r="1.6" fill="currentColor"/></svg></div><div class="s-num">02</div><div class="s-title">Merkle-sum tree → public root</div><div class="s-desc">Balances hash into a tree committing to their total.</div></div>
+        <div class="step"><div class="s-ico"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div><div class="s-num">03</div><div class="s-title">RISC Zero zkVM</div><div class="s-desc">Proves reserves ≥ Σ balances, each balance in range.</div></div>
+        <div class="step"><div class="s-ico"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 9l7-5 7 5v6l-7 5-7-5V9z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="s-num">04</div><div class="s-title">Groth16 wrap</div><div class="s-desc">Compresses the proof into a 260-byte seal.</div></div>
+        <div class="step"><div class="s-ico"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M8 9h8M8 13h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div><div class="s-num">05</div><div class="s-title">Soroban verify</div><div class="s-desc">Contract checks the proof + reads live USDC reserves.</div></div>
+        <div class="step is-final"><div class="s-ico"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 12.5l2 2 4-4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="s-num">06</div><div class="s-title">On-chain attestation</div><div class="s-desc">Solvent ✓ — published for anyone to audit.</div></div>
       </div>
-      <div id="inclusionResult" class="result" hidden></div>
     </section>
-  </main>
 
-  <footer class="wrap">
-    <p class="meta">Built for Stellar Hacks: Real-World ZK · RISC Zero → Groth16 → Soroban</p>
-  </footer>
+    <!-- 5 · FOOTER -->
+    <footer class="site-foot">
+      <div class="foot-inner">
+        <div class="foot-tag">
+          <span class="chain">Attestar</span> · built for Stellar Hacks: Real-World ZK · RISC Zero → Groth16 → Soroban
+        </div>
+        <nav class="foot-links">
+          <a href="#" id="footRepo" aria-disabled="true" title="Repo link — add your repository URL"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 19c-4 1.5-4-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 00-1.3-3.2 4.3 4.3 0 00-.1-3.2s-1-.3-3.4 1.3a11.6 11.6 0 00-6 0C6.3 1.6 5.3 1.9 5.3 1.9a4.3 4.3 0 00-.1 3.2A4.6 4.6 0 003.9 8.3c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Repo</a>
+          <a href="#" id="footContract" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 7H7a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-2M14 4h6v6M20 4l-9 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Contract</a>
+          <a href="#" id="footVerifier" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 12.5l2 2 4-4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Verifier</a>
+        </nav>
+      </div>
+    </footer>
+
+  </div>
 
   <script src="por-verify.js"></script>
   <script src="app.js"></script>
