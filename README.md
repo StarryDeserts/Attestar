@@ -1,8 +1,16 @@
-# Attestar — ZK Proof-of-Reserves on Stellar
+<p align="center">
+  <img src="docs/attestar-logo.png" alt="Attestar" width="128" height="128" />
+</p>
 
-> Prove an exchange's USDC reserves cover **every** user's balance — verified on-chain by a Soroban contract — **without revealing any individual balance.**
+<h1 align="center">Attestar</h1>
 
-**Attestar** — built for **Stellar Hacks: Real-World ZK**.
+<p align="center"><strong>ZK Proof-of-Reserves on Stellar</strong></p>
+
+<p align="center">
+  Prove an exchange's USDC reserves cover <strong>every</strong> user's balance — verified on-chain by a Soroban contract — <strong>without revealing any individual balance.</strong>
+</p>
+
+<p align="center"><em>Built for <strong>Stellar Hacks: Real-World ZK</strong>.</em></p>
 
 A custodian commits to its per-user liabilities under a Merkle-sum-tree root `M`, generates a RISC Zero zkVM proof that `total = Σ balanceᵢ` (with every `0 ≤ balanceᵢ < 2⁶⁴`), wraps it as a Groth16 receipt, and submits it to a Soroban contract. The contract verifies the receipt **and reads the issuer's live on-chain USDC balance**, storing an attestation only if `reserves ≥ liabilities`. Any user can then independently check that their balance was included in `M`.
 
